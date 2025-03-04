@@ -11,4 +11,5 @@ fun Application.module() {
     configureSockets()
     configureMonitoring()
     configureRouting()
+    configureSession()
 }

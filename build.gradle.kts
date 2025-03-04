@@ -25,6 +25,7 @@ dependencies {
     implementation(libs.ktor.server.websockets)
     implementation(libs.ktor.server.call.logging)
     implementation(libs.ktor.server.netty)
+    implementation(libs.ktor.server.sessions)
     implementation(libs.logback.classic)
     implementation(libs.ktor.server.config.yaml)
     testImplementation(libs.ktor.server.test.host)
