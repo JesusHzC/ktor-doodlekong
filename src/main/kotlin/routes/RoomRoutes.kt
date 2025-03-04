@@ -3,6 +3,7 @@ package com.jesushz.routes
 import com.jesushz.data.Room
 import com.jesushz.data.models.BasicApiResponse
 import com.jesushz.data.models.CreateRoomRequest
+import com.jesushz.data.models.RoomResponse
 import com.jesushz.other.Constants.MAX_ROOM_SIZE
 import com.jesushz.other.Constants.MIN_ROOM_SIZE
 import com.jesushz.server
@@ -52,6 +53,31 @@ fun Routing.createRoomRoutes() {
             println("Room created: ${roomRequest.name}")
 
             call.respond(HttpStatusCode.Created, BasicApiResponse(true))
+        }
+    }
+}
+
+fun Routing.getRoomsRoutes() {
+    route("/api/getRooms") {
+        get {
+            val searchQuery = call.parameters["searchQuery"]
+            if (searchQuery == null) {
+                call.respond(HttpStatusCode.BadRequest)
+                return@get
+            }
+
+            val roomsResult = server.rooms.filterKeys { key ->
+                key.contains(searchQuery, ignoreCase = true)
+            }
+            val roomsResponse = roomsResult.values.map { room ->
+                RoomResponse(
+                    name = room.name,
+                    maxPlayers = room.maxPlayers,
+                    playerCount = room.players.size
+                )
+            }.sortedBy { it.name }
+
+            call.respond(HttpStatusCode.OK, roomsResponse)
         }
     }
 }
