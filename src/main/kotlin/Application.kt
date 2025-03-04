@@ -6,6 +6,8 @@ fun main(args: Array<String>) {
     io.ktor.server.netty.EngineMain.main(args)
 }
 
+val server = DrawingServer()
+
 fun Application.module() {
     configureSerialization()
     configureSockets()
