@@ -1,6 +1,7 @@
 package com.jesushz
 
 import com.jesushz.routes.createRoomRoutes
+import com.jesushz.routes.gameWebSocketRoutes
 import com.jesushz.routes.getRoomsRoutes
 import com.jesushz.routes.joinRoomRoutes
 import io.ktor.server.application.*
@@ -11,5 +12,6 @@ fun Application.configureRouting() {
         createRoomRoutes()
         getRoomsRoutes()
         joinRoomRoutes()
+        gameWebSocketRoutes()
     }
 }
