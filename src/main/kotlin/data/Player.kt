@@ -39,11 +39,6 @@ data class Player(
         pingTime = System.currentTimeMillis()
         socket.send(Frame.Text(gson.toJson(Ping())))
         delay(PING_FREQUENCY)
-        if (pingTime - pongTime > PING_FREQUENCY) {
-            isOnline = false
-            server.playerLeft(clientId)
-            pingJob?.cancel()
-        }
     }
 
     fun receivedPong() {

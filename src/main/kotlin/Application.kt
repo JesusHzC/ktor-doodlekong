@@ -12,8 +12,8 @@ val gson = Gson()
 
 fun Application.module() {
     configureSerialization()
+    configureSession()
     configureSockets()
     configureMonitoring()
     configureRouting()
-    configureSession()
 }

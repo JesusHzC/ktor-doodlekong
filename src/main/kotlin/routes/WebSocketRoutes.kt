@@ -23,67 +23,67 @@ import io.ktor.server.websocket.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.channels.consumeEach
 
-fun Route.gameWebSocketRoutes() {
-    route("/ws/draw") {
-        standardWebSocket { socket, clientId, message, payload ->
-            when (payload) {
-                is JoinRoomHandshake -> {
-                    val room = server.rooms[payload.roomName]
-                    if (room == null) {
-                        val gameError = GameError(GameError.ERROR_ROOM_NOT_FOUND)
-                        socket.send(Frame.Text(gson.toJson(gameError)))
-                        return@standardWebSocket
-                    }
-                    val player = Player(
-                        payload.username,
-                        socket,
-                        payload.clientId
-                    )
-                    server.playerJoined(player)
+//fun Route.gameWebSocketRoutes() {
+//    route("/ws/draw") {
+//        standardWebSocket { socket, clientId, message, payload ->
+//            when (payload) {
+//                is JoinRoomHandshake -> {
+//                    val room = server.rooms[payload.roomName]
+//                    if (room == null) {
+//                        val gameError = GameError(GameError.ERROR_ROOM_NOT_FOUND)
+//                        socket.send(Frame.Text(gson.toJson(gameError)))
+//                        return@standardWebSocket
+//                    }
+//                    val player = Player(
+//                        payload.username,
+//                        socket,
+//                        payload.clientId
+//                    )
+//                    server.playerJoined(player)
+//
+//                    if (!room.containsPlayer(payload.username)) {
+//                        room.addPlayer(player.clientId, payload.username, socket)
+//                    } else {
+//                        val playerInRoom = room.players.find { it.clientId == clientId }
+//                        playerInRoom?.socket = socket
+//                        playerInRoom?.startPinging()
+//                    }
+//                }
+//                is DrawData -> {
+//                    val room = server.rooms[payload.roomName] ?: return@standardWebSocket
+//                    if (room.phase == Room.Phase.GAME_RUNNING) {
+//                        room.broadcastToAllExcept(message, clientId)
+//                        room.addSerializedDrawAction(message)
+//                    }
+//                    room.lastDrawData = payload
+//                }
+//                is ChosenWord -> {
+//                    val room = server.rooms[payload.roomName] ?: return@standardWebSocket
+//                    room.setWordAndSwitchToGameRunning(payload.chosenWord)
+//                }
+//                is ChatMessage -> {
+//                    val room = server.rooms[payload.roomName] ?: return@standardWebSocket
+//                    if (!room.checkWordAndNotifyPlayers(payload)) {
+//                        room.broadcast(message)
+//                    }
+//                }
+//                is Ping -> {
+//                    server.players[clientId]?.receivedPong()
+//                }
+//                is DisconnectRequest -> {
+//                    server.playerLeft(clientId, true)
+//                }
+//                is DrawAction -> {
+//                    val room = server.getRoomWithClientId(clientId)  ?: return@standardWebSocket
+//                    room.broadcastToAllExcept(message, clientId)
+//                    room.addSerializedDrawAction(message)
+//                }
+//            }
+//        }
+//    }
+//}
 
-                    if (!room.containsPlayer(payload.username)) {
-                        room.addPlayer(player.clientId, payload.username, socket)
-                    } else {
-                        val playerInRoom = room.players.find { it.clientId == clientId }
-                        playerInRoom?.socket = socket
-                        playerInRoom?.startPinging()
-                    }
-                }
-                is DrawData -> {
-                    val room = server.rooms[payload.roomName] ?: return@standardWebSocket
-                    if (room.phase == Room.Phase.GAME_RUNNING) {
-                        room.broadcastToAllExcept(message, clientId)
-                        room.addSerializedDrawAction(message)
-                    }
-                    room.lastDrawData = payload
-                }
-                is ChosenWord -> {
-                    val room = server.rooms[payload.roomName] ?: return@standardWebSocket
-                    room.setWordAndSwitchToGameRunning(payload.chosenWord)
-                }
-                is ChatMessage -> {
-                    val room = server.rooms[payload.roomName] ?: return@standardWebSocket
-                    if (!room.checkWordAndNotifyPlayers(payload)) {
-                        room.broadcast(message)
-                    }
-                }
-                is Ping -> {
-                    server.players[clientId]?.receivedPong()
-                }
-                is DisconnectRequest -> {
-                    server.playerLeft(clientId, true)
-                }
-                is DrawAction -> {
-                    val room = server.getRoomWithClientId(clientId)  ?: return@standardWebSocket
-                    room.broadcastToAllExcept(message, clientId)
-                    room.addSerializedDrawAction(message)
-                }
-            }
-        }
-    }
-}
-
-internal fun Route.standardWebSocket(
+fun Route.standardWebSocket(
     handleFrame: suspend (
         socket: DefaultWebSocketServerSession,
         clientId: String,
@@ -102,7 +102,9 @@ internal fun Route.standardWebSocket(
             incoming.consumeEach { frame ->
                 if (frame is Frame.Text) {
                     val message = frame.readText()
+                    println("message: $message")
                     val jsonObject = JsonParser.parseString(message).asJsonObject
+                    println("jsonObject: $jsonObject")
                     val type = when (jsonObject.get("type").asString) {
                         TYPE_CHAT_MESSAGE -> ChatMessage::class.java
                         TYPE_DRAW_DATA -> DrawData::class.java
@@ -116,21 +118,20 @@ internal fun Route.standardWebSocket(
                         TYPE_DRAW_ACTION -> DrawAction::class.java
                         else -> BaseModel::class.java
                     }
+                    println("type: $type")
                     val payload = gson.fromJson(message, type)
-                    handleFrame(
-                        this@webSocket,
-                        session.clientId,
-                        message,
-                        payload
-                    )
+                    println("payload: $payload")
+                    handleFrame(this, session.clientId, message, payload)
                 }
             }
         } catch (e: Exception) {
+            println("WS Exception")
             e.printStackTrace()
         } finally {
             // Handle disconnects
             val playerWithClientId = server
                 .getRoomWithClientId(session.clientId)?.players?.find { it.clientId == session.clientId }
+            println("playerWithClientId: $playerWithClientId")
             if (playerWithClientId != null) {
                 server.playerLeft(session.clientId)
             }

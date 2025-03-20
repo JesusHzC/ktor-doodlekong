@@ -11,7 +11,7 @@ fun Application.configureSession() {
     }
     intercept(ApplicationCallPipeline.Plugins) {
         if (call.sessions.get<DrawingSession>() == null) {
-            val clientId = call.parameters["clientId"] ?: ""
+            val clientId = call.request.headers["client_id"] ?: ""
             call.sessions.set(DrawingSession(clientId, generateNonce()))
         }
     }
